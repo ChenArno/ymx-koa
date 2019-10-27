@@ -15,11 +15,25 @@ const path = require('path')
 
 const config = require('./config')
 const routes = require('./routes')
+const test = require('./routes/test')
 
 const port = process.env.PORT || config.port
 
 // error handler
 onerror(app)
+//由于做了跨域,所以前端用post请求后台接口的时候,会有预检,及时options请求,
+//解决的方法,在nodejs里对options的请求直接返回200,
+//具体的做法是在app.js加入如下代码:
+app.use(async (ctx, next) => {
+  ctx.set('Access-Control-Allow-Origin', '*');
+  ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+  ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+  if (ctx.method == 'OPTIONS') {
+    ctx.body = 200;
+  } else {
+    await next();
+  }
+});
 
 // middlewares
 app.use(bodyparser())
@@ -27,8 +41,8 @@ app.use(bodyparser())
   .use(logger())
   .use(require('koa-static')(__dirname + '/public'))
   .use(views(path.join(__dirname, '/views'), {
-    options: {settings: {views: path.join(__dirname, 'views')}},
-    map: {'njk': 'nunjucks'},
+    options: { settings: { views: path.join(__dirname, 'views') } },
+    map: { 'njk': 'nunjucks' },
     extension: 'njk'
   }))
   .use(router.routes())
@@ -48,10 +62,13 @@ router.get('/', async (ctx, next) => {
     title: 'Koa2'
   }
   await ctx.render('index', ctx.state)
+  // await next();
 })
 
 routes(router)
-app.on('error', function(err, ctx) {
+
+app.use(test.routes());
+app.on('error', function (err, ctx) {
   console.log(err)
   logger.error('server error', err, ctx)
 })
