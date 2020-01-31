@@ -16,6 +16,7 @@ const path = require('path')
 const config = require('./config')
 const routes = require('./routes')
 const test = require('./routes/test')
+const api = require('./routes/api')
 
 const port = process.env.PORT || config.port
 
@@ -39,7 +40,7 @@ app.use(async (ctx, next) => {
 app.use(bodyparser())
   .use(json())
   .use(logger())
-  .use(require('koa-static')(__dirname + '/public'))
+  .use(require('koa-static')(__dirname + '/yamaxun'))
   .use(views(path.join(__dirname, '/views'), {
     options: { settings: { views: path.join(__dirname, 'views') } },
     map: { 'njk': 'nunjucks' },
@@ -68,6 +69,7 @@ router.get('/', async (ctx, next) => {
 routes(router)
 
 app.use(test.routes());
+app.use(api.routes());
 app.on('error', function (err, ctx) {
   console.log(err)
   logger.error('server error', err, ctx)
